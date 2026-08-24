@@ -1,0 +1,45 @@
+﻿using GameBoyCEmulator.SaveState.Components;
+
+namespace GameBoyCEmulator.Core.Cartridge;
+
+public class NoMBC(byte[] rom) : ICartridge
+{
+    private readonly byte[] _rom = rom;
+
+    public byte[] HeaderCheck => [.. _rom[0x0134..0x0144], .. _rom[0x014D..0x0150]];
+
+    public byte ReadRam(ushort address)
+    {
+        return 0xFF;
+    }
+
+    public byte ReadRom(ushort address)
+    {
+        return _rom[address];
+    }
+
+    public void SaveRam()
+    {
+
+    }
+
+    public void WriteRam(ushort address, byte value)
+    {
+
+    }
+
+    public void WriteRegister(ushort address, byte value)
+    {
+
+    }
+
+    public MBCState SaveState()
+    {
+        return new MBCState(0, 0, false, HeaderCheck, null, null);
+    }
+
+    public void LoadState(MBCState state)
+    {
+
+    }
+}
