@@ -6,6 +6,8 @@ namespace GameBoyCEmulator.Core;
 
 public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
 {
+    private const int WRAMBankOffset = 0x1000;
+
     private DMA _dma = dma;
     private JOYPAD _joypad = joypad;
     private PPU _ppu = ppu;
@@ -14,17 +16,19 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
 
     public bool _bootRomMapped = true; // DEBUG: Public
 
-    private readonly byte[] _bootROM = new byte[0x100];
-    private byte[] _wram = new byte[0x2000];
+    private readonly byte[] _bootROM = new byte[0x900];
+    private byte[] _wram = new byte[0x8000];
     private byte[] _vram = new byte[0x2000];   // NOTE: Move to PPU?
     private byte[] _hram = new byte[0x7F];
     private byte[] _oam = new byte[0xA0];    // NOTE: Move to PPU?
     private byte _ie = 0;
     private byte _if;
+    private byte _svbk;
     private ICartridge _cartridge = new NoCartridge();
 
     public byte IE { get => _ie; set => _ie = value; }
     public byte IF { get => _if; set => _if = value; }
+    private byte SVBK { get => _svbk; set => _svbk = (byte)(value == 0 ? 1 : value & 0x07); }
 
     public ICartridge Cartridge { get => _cartridge; }
     public byte[] VRAM { get => _vram; }
@@ -39,14 +43,24 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                     return _bootROM[address];
                 }
                 return _cartridge.ReadRom(address);
+            case ushort _ when address <= 0x01FF:
+                return _cartridge.ReadRom(address);
+            case ushort _ when address <= 0x08FF:
+                if (_bootRomMapped)
+                {
+                    return _bootROM[address];
+                }
+                return _cartridge.ReadRom(address);
             case ushort _ when address <= 0x7FFF:
                 return _cartridge.ReadRom(address);
             case ushort _ when address <= 0x9FFF:
                 return _vram[address & 0x1FFF];
             case ushort _ when address <= 0xBFFF:
                 return _cartridge.ReadRam((ushort)(address & 0x1FFF));
-            case ushort _ when address <= 0xDFFF:
+            case ushort _ when address <= 0xCFFF:
                 return _wram[address & 0x1FFF];
+            case ushort _ when address <= 0xDFFF:
+                return _wram[SVBK * WRAMBankOffset + (address & 0x1FFF) ];
             case ushort _ when address <= 0xFDFF:   // Echo RAM
                 return _wram[address & 0x1FFF];
             case ushort _ when address <= 0xFE9F:
@@ -123,6 +137,8 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 return _ppu.WY;
             case 0xFF4B:
                 return _ppu.WX;
+            case 0xFF70:
+                return SVBK;
             case ushort _ when address <= 0xFF7F:
                 return 0;
             case ushort _ when address < 0xFFFF:
@@ -152,8 +168,11 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
             case ushort _ when address <= 0xBFFF:
                 _cartridge.WriteRam((ushort)(address & 0x1FFF), value);
                 break;
-            case ushort _ when address <= 0xDFFF:
+            case ushort _ when address <= 0xCFFF:
                 _wram[address & 0x1FFF] = value;
+                break;
+            case ushort _ when address <= 0xDFFF:
+                _wram[SVBK * WRAMBankOffset + (address & 0x1FFF)] = value;
                 break;
             case ushort _ when address <= 0xFDFF:   // Echo RAM
                 _wram[address & 0x1FFF] = value;
@@ -282,6 +301,9 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 break;
             case 0xFF50:
                 _bootRomMapped = false;
+                break;
+            case 0xFF70:
+                SVBK = value;
                 break;
             case ushort _ when address <= 0xFF7F:
                 break;
