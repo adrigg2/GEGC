@@ -187,17 +187,17 @@ public partial class MainWindow : Window
 
         if (e.Key == Settings.QuickSave && _emulator != null)
         {
-            Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGB/states/{_romName}");
+            Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGC/states/{_romName}");
             var saveState = _rewindStack.Peek();
-            SaveStateSerializer.SerializeSaveState(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGB/states/{_romName}/quick_save.state", saveState);
+            SaveStateSerializer.SerializeSaveState(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGC/states/{_romName}/quick_save.state", saveState);
         }
         else if (e.Key == Settings.QuickLoad && _emulator != null)
         {
-            if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGB/states/{_romName}/quick_save.state"))
+            if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGC/states/{_romName}/quick_save.state"))
             {
                 try
                 {
-                    _loadState = SaveStateSerializer.DeserializeSaveState(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGB/states/{_romName}/quick_save.state", _emulator.MMU.Cartridge.HeaderCheck);
+                    _loadState = SaveStateSerializer.DeserializeSaveState(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGC/states/{_romName}/quick_save.state", _emulator.MMU.Cartridge.HeaderCheck);
                 }
                 catch (FileFormatException ex)
                 {
@@ -373,7 +373,7 @@ public partial class MainWindow : Window
 
     private void SaveState(object sender, RoutedEventArgs e)
     {
-        string dir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGB/states/{_romName}/";
+        string dir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGC/states/{_romName}/";
         Directory.CreateDirectory(dir);
         string fileName = Path.Combine(dir, "save.state");
         int count = 1;
@@ -395,16 +395,16 @@ public partial class MainWindow : Window
         }
 
         string dir = "";
-        if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGB/states/{_romName}"))
+        if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGC/states/{_romName}"))
         {
-            dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GEGB", "states", _romName);
+            dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GEGC", "states", _romName);
         }
 
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             FileName = "save",
             DefaultExt = ".state",
-            Filter = "GEGB Save state file (.state)|*.state",
+            Filter = "GEGC Save state file (.state)|*.state",
             InitialDirectory = dir,
         };
 
@@ -440,16 +440,16 @@ public partial class MainWindow : Window
         }
 
         string dir = "";
-        if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGB/states/{_romName}"))
+        if (Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + $"/GEGC/states/{_romName}"))
         {
-            dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GEGB", "states", _romName);
+            dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GEGC", "states", _romName);
         }
 
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             FileName = "save",
             DefaultExt = ".state",
-            Filter = "GEGB Save state file (.state)|*.state",
+            Filter = "GEGC Save state file (.state)|*.state",
             InitialDirectory = dir,
         };
 

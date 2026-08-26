@@ -35,9 +35,9 @@ public static class Settings
 
     static Settings()
     {
-        if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGB/config.json"))
+        if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGC/config.json"))
         {
-            string json = File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGB/config.json");
+            string json = File.ReadAllText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGC/config.json");
             _data = JsonSerializer.Deserialize<SettingsData>(json) ?? new();
         }
     }
@@ -46,8 +46,8 @@ public static class Settings
     {
         string json = JsonSerializer.Serialize(_data);
 
-        Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGB/");
-        File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGB/config.json", json);
+        Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGC/");
+        File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GEGC/config.json", json);
     }
 
     private class SettingsData
