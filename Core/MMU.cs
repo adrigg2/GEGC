@@ -61,8 +61,10 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 return _wram[address & 0x1FFF];
             case ushort _ when address <= 0xDFFF:
                 return _wram[SVBK * WRAMBankOffset + (address & 0x1FFF) ];
-            case ushort _ when address <= 0xFDFF:   // Echo RAM
+            case ushort _ when address <= 0xEFFF:   // Echo RAM bank 0
                 return _wram[address & 0x1FFF];
+            case ushort _ when address <= 0xFDFF:   // Echo RAM bank 1-7
+                return _wram[SVBK * WRAMBankOffset + (address & 0x1FFF)];
             case ushort _ when address <= 0xFE9F:
                 return _oam[address - 0xFE00];
             case ushort _ when address <= 0xFEFF:
@@ -174,8 +176,11 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
             case ushort _ when address <= 0xDFFF:
                 _wram[SVBK * WRAMBankOffset + (address & 0x1FFF)] = value;
                 break;
-            case ushort _ when address <= 0xFDFF:   // Echo RAM
+            case ushort _ when address <= 0xEFFF:   // Echo RAM bank 0
                 _wram[address & 0x1FFF] = value;
+                break;
+            case ushort _ when address <= 0xFDFF:   // Echo RAM bank 1-7
+                _wram[SVBK * WRAMBankOffset + (address & 0x1FFF)] = value;
                 break;
             case ushort _ when address <= 0xFE9F:
                 _oam[address - 0xFE00] = value;
