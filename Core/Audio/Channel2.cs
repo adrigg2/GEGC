@@ -8,6 +8,7 @@ public class Channel2
     private byte _nr22;
     private byte _nr23;
     private byte _nr24;
+    private byte _dOutput;
 
     private readonly byte[] _dutyCycles = [
         0b00000001, // 12.5%
@@ -82,6 +83,7 @@ public class Channel2
             }
         }
     }
+    public byte DOutput { get => _dOutput; }
 
     public bool Active { get => _active; private set => _active = value && _dacActive; }
 
@@ -92,12 +94,14 @@ public class Channel2
         if (!_dacActive)
         {
             _output = 0;
+            _dOutput = 0;
             return;
         }
 
         if (!Active)
         {
             _output = 1;
+            _dOutput = 0;
             return;
         }
 
@@ -113,6 +117,7 @@ public class Channel2
         int dutyCycle = (_nr21 & 0xC0) >> 6;
         int digitalSignal = ((_dutyCycles[dutyCycle] >> _sampleIndex) & 0x1) * _volume;
         _output = (-2.0f * digitalSignal / 15.0f) + 1.0f;
+        _dOutput = (byte)digitalSignal;
     }
 
     public void ClearRegisters()

@@ -8,6 +8,7 @@ public class Channel4
     private byte _nr42;
     private byte _nr43;
     private byte _nr44;
+    private byte _dOutput;
 
     private ushort _lsfr;
 
@@ -78,6 +79,7 @@ public class Channel4
             }
         }
     }
+    public byte DOutput { get => _dOutput; }
 
     public bool Active { get => _active; private set => _active = value && _dacActive; }
 
@@ -96,12 +98,14 @@ public class Channel4
         if (!_dacActive)
         {
             _output = 0;
+            _dOutput = 0;
             return;
         }
 
         if (!Active)
         {
             _output = 1;
+            _dOutput = 0;
             return;
         }
 
@@ -117,6 +121,7 @@ public class Channel4
             ResetFrequency();
             int digitalSignal = UpdateLsfr() * _volume;
             _output = (-2.0f * digitalSignal / 15.0f) + 1.0f;
+            _dOutput = (byte)digitalSignal;
         }
     }
 

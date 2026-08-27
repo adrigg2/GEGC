@@ -140,6 +140,10 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 return _ppu.VBK;
             case 0xFF70:
                 return SVBK;
+            case 0xFF76:
+                return _apu.PCM12;
+            case 0xFF77:
+                return _apu.PCM34;
             case ushort _ when address <= 0xFF7F:
                 return 0;
             case ushort _ when address < 0xFFFF:

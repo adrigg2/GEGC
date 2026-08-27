@@ -78,6 +78,8 @@ public class APU
             }
         }
     }
+    public byte PCM12 { get; set; }
+    public byte PCM34 { get; set; }
 
     public Channel1 Channel1 { get => _channel1; }
     public Channel2 Channel2 { get => _channel2; }
@@ -168,6 +170,9 @@ public class APU
         _channel2.Tick(cycles);
         _channel3.Tick(cycles);
         _channel4.Tick(cycles);
+
+        PCM12 = (byte)((_channel2.DOutput << 4) | (_channel1.DOutput & 0x0F));
+        PCM34 = (byte)((_channel4.DOutput << 4) | (_channel3.DOutput & 0x0F));
 
         if (_sampleCycles >= CyclesPerSample)
         {

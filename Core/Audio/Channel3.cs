@@ -9,6 +9,7 @@ public class Channel3
     private byte _nr32;
     private byte _nr33;
     private byte _nr34;
+    private byte _dOutput;
 
     private byte[] _waveRam;
 
@@ -69,6 +70,7 @@ public class Channel3
             }
         }
     }
+    public byte DOutput { get => _dOutput; }
 
     public bool Active { get => _active; private set => _active = value && _dacActive; }
 
@@ -102,12 +104,14 @@ public class Channel3
         if (!_dacActive)
         {
             _output = 0;
+            _dOutput = 0;
             return;
         }
 
         if (!Active)
         {
             _output = 1;
+            _dOutput = 0;
             return;
         }
 
@@ -127,10 +131,12 @@ public class Channel3
         {
             int digitalSignal = _waveBuffer >> ((volume - 1) & 0x3);
             _output = (-2.0f * digitalSignal / 15.0f) + 1.0f;
+            _dOutput = (byte)digitalSignal;
         }
         else
         {
             _output = 1;
+            _dOutput = 0;
         }
     }
 
