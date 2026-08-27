@@ -1,5 +1,6 @@
 ﻿using GameBoyCEmulator.SaveState.Components;
 using GameBoyCEmulator.Views;
+using System.Printing;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -21,6 +22,7 @@ public class PPU
     private const int MaxLines = 153;
     private const int ScreenHeigth = 144;
     private const int ScreenWidth = 160;
+    private const int VRAMBankOffset = 0x2000;
 
     private int _cycleCount;
     private int _windowY;
@@ -36,6 +38,7 @@ public class PPU
     private byte _obp1;
     private byte _wy;
     private byte _wx;
+    private byte _vbk;
 
     private bool _STATInterruptRequest;
     private bool _screenOff;
@@ -43,6 +46,8 @@ public class PPU
     private WriteableBitmap _screenImage;
     private byte[] _screenBuffer;
     private byte[] _bgColorIds;
+    private readonly byte[] _vram;
+    private readonly byte[] _oam;
 
     private List<ushort> _objectPool;
 
@@ -59,6 +64,20 @@ public class PPU
     public byte OBP1 { get => _obp1; set => _obp1 = value; }
     public byte WY { get => _wy; set => _wy = value; }
     public byte WX { get => _wx; set => _wx = value; }
+    public byte VBK 
+    {
+        get
+        {
+            return (byte)(_vbk | 0xFE);
+        }
+        set
+        {
+            _vbk = (byte)(value & 0x01);
+        }
+    }
+
+    public byte[] VRAM { get => _vram; }
+    public byte[] OAM { get => _oam; }
 
     public PPU(Dispatcher windowDispatcher)
     {
@@ -77,6 +96,9 @@ public class PPU
         _bgColorIds = new byte[ScreenWidth];
         _windowDispatcher = windowDispatcher;
         _objectPool = [];
+
+        _oam = new byte[0xA0];
+        _vram = new byte[0x4000];
     }
 
     public void SetWindowSource(MainWindow window)
@@ -119,9 +141,9 @@ public class PPU
                 if (_cycleCount >= OAMReadCycles)
                 {
                     _objectPool.Clear();
-                    for (ushort i = 0xFE00; i < 0xFEA0 && _objectPool.Count < 10; i += 4)
+                    for (ushort i = 0x00; i < 0xA0 && _objectPool.Count < 10; i += 4)
                     {
-                        int y = mmu.ReadByte(i) - 16;
+                        int y = _oam[i] - 16;
                         int size = (_lcdc & 0x4) != 0 ? 16 : 8;
                         if (y <= _ly && y + size > _ly)
                         {
@@ -239,6 +261,26 @@ public class PPU
         _screenBuffer = (byte[])state.ScreenBuffer.Clone();
         _bgColorIds = (byte[])state.BgColorIds.Clone();
         _objectPool = [.. state.ObjectPool];
+    }
+
+    public void WriteVRAM(ushort address, byte value)
+    {
+        _vram[VBK * VRAMBankOffset + address] = value;
+    }
+
+    public byte ReadVRAM(ushort address)
+    {
+        return _vram[VBK * VRAMBankOffset + address];
+    }
+
+    public void WriteOAM(ushort address, byte value)
+    {
+        _oam[address] = value;
+    }
+
+    public byte ReadOAM(ushort address)
+    {
+        return _oam[address];
     }
 
     private void ChangeMode(int mode)

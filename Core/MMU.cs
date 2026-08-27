@@ -18,9 +18,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
 
     private readonly byte[] _bootROM = new byte[0x900];
     private byte[] _wram = new byte[0x8000];
-    private byte[] _vram = new byte[0x2000];   // NOTE: Move to PPU?
     private byte[] _hram = new byte[0x7F];
-    private byte[] _oam = new byte[0xA0];    // NOTE: Move to PPU?
     private byte _ie = 0;
     private byte _if;
     private byte _svbk;
@@ -31,7 +29,6 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
     private byte SVBK { get => _svbk; set => _svbk = (byte)(value == 0 ? 1 : value & 0x07); }
 
     public ICartridge Cartridge { get => _cartridge; }
-    public byte[] VRAM { get => _vram; }
 
     public byte ReadByte(ushort address)
     {
@@ -54,7 +51,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
             case ushort _ when address <= 0x7FFF:
                 return _cartridge.ReadRom(address);
             case ushort _ when address <= 0x9FFF:
-                return _vram[address & 0x1FFF];
+                return _ppu.ReadVRAM((ushort)(address & 0x1FFF));
             case ushort _ when address <= 0xBFFF:
                 return _cartridge.ReadRam((ushort)(address & 0x1FFF));
             case ushort _ when address <= 0xCFFF:
@@ -66,7 +63,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
             case ushort _ when address <= 0xFDFF:   // Echo RAM bank 1-7
                 return _wram[SVBK * WRAMBankOffset + (address & 0x1FFF)];
             case ushort _ when address <= 0xFE9F:
-                return _oam[address - 0xFE00];
+                return _ppu.ReadOAM((ushort)(address - 0xFE00));
             case ushort _ when address <= 0xFEFF:
                 return 0;
             case 0xFF00:
@@ -139,6 +136,8 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 return _ppu.WY;
             case 0xFF4B:
                 return _ppu.WX;
+            case 0xFF4F:
+                return _ppu.VBK;
             case 0xFF70:
                 return SVBK;
             case ushort _ when address <= 0xFF7F:
@@ -165,7 +164,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 _cartridge.WriteRegister(address, value);
                 break;
             case ushort _ when address <= 0x9FFF:
-                _vram[address & 0x1FFF] = value;
+                _ppu.WriteVRAM((ushort)(address & 0x1FFF), value);
                 break;
             case ushort _ when address <= 0xBFFF:
                 _cartridge.WriteRam((ushort)(address & 0x1FFF), value);
@@ -183,7 +182,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 _wram[SVBK * WRAMBankOffset + (address & 0x1FFF)] = value;
                 break;
             case ushort _ when address <= 0xFE9F:
-                _oam[address - 0xFE00] = value;
+                _ppu.WriteOAM((ushort)(address - 0xFE00), value);
                 break;
             case ushort _ when address <= 0xFEFF:
                 break;
@@ -304,6 +303,9 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
             case 0xFF4B:
                 _ppu.WX = value;
                 break;
+            case 0xFF4F:
+                _ppu.VBK = value;
+                break;
             case 0xFF50:
                 _bootRomMapped = false;
                 break;
@@ -391,9 +393,9 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
             _ie,
             _if,
             (byte[])_wram.Clone(),
-            (byte[])_vram.Clone(),
+            (byte[])_ppu.VRAM.Clone(),
             (byte[])_hram.Clone(),
-            (byte[])_oam.Clone(),
+            (byte[])_ppu.OAM.Clone(),
             _cartridge.SaveState()
             );
     }
@@ -404,9 +406,9 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
         _ie = state.IE;
         _if = state.IF;
         _wram = (byte[])state.WRAM.Clone();
-        _vram = (byte[])state.VRAM.Clone();
+        //_vram = (byte[])state.VRAM.Clone();
         _hram = (byte[])state.HRAM.Clone();
-        _oam = (byte[])state.OAM.Clone();
+        //_oam = (byte[])state.OAM.Clone();
         _cartridge.LoadState(state.Cartridge);
     }
 }
