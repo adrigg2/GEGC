@@ -8,11 +8,11 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
 {
     private const int WRAMBankOffset = 0x1000;
 
-    private DMA _dma = dma;
-    private JOYPAD _joypad = joypad;
-    private PPU _ppu = ppu;
-    private TIMER _timer = timer;
-    private APU _apu = apu;
+    private readonly DMA _dma = dma;
+    private readonly JOYPAD _joypad = joypad;
+    private readonly PPU _ppu = ppu;
+    private readonly TIMER _timer = timer;
+    private readonly APU _apu = apu;
 
     public bool _bootRomMapped = true; // DEBUG: Public
 
@@ -22,10 +22,24 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
     private byte _ie = 0;
     private byte _if;
     private byte _svbk;
+    private byte _key0;
+    private byte _key1;
     private ICartridge _cartridge = new NoCartridge();
 
     public byte IE { get => _ie; set => _ie = value; }
     public byte IF { get => _if; set => _if = value; }
+    public byte KEY0
+    {
+        get => _key0;
+        set
+        {
+            if (_bootRomMapped)
+            {
+                _key0 = value;
+            }
+        }
+    }
+    public byte KEY1 { get => _key1; set => _key1 = (byte)(value & 0x81); }
     private byte SVBK { get => _svbk; set => _svbk = (byte)(value == 0 ? 1 : value & 0x07); }
 
     public ICartridge Cartridge { get => _cartridge; }
@@ -136,6 +150,10 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 return _ppu.WY;
             case 0xFF4B:
                 return _ppu.WX;
+            case 0xFF4C:
+                return KEY0;
+            case 0xFF4D:
+                return KEY1;
             case 0xFF4F:
                 return _ppu.VBK;
             case 0xFF70:
@@ -306,6 +324,12 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 break;
             case 0xFF4B:
                 _ppu.WX = value;
+                break;
+            case 0xFF4C:
+                KEY0 = value;
+                break;
+            case 0xFF4D:
+                KEY1 = value;
                 break;
             case 0xFF4F:
                 _ppu.VBK = value;
