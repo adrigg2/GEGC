@@ -53,7 +53,7 @@ public class Emulator
             _ppu.Update(cycles, _mmu);
             _dma.Tick(cycles * _cpu.SpeedMode, _mmu);
             _joypad.Update(_mmu);
-            int divApuCounter = _timer.Tick(cycles * _cpu.SpeedMode, _mmu);
+            int divApuCounter = _timer.Tick(cycles * _cpu.SpeedMode * (_cpu.SpeedModeCounter > 0 ? 0 : 1), _mmu);
             _apu.Tick(cycles, divApuCounter);
             frameCycles += cycles;
         }

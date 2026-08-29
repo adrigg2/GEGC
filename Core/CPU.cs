@@ -31,6 +31,7 @@ public class CPU
     public ushort HL { get => (ushort)((_h << 8) | _l); set { _h = (byte)(value >> 8); _l = (byte)(value & 0xFF); } }
 
     public int SpeedMode { get => _speedMode; }
+    public int SpeedModeCounter { get => _speedSwitchCounter; }
 
     public bool ZeroFlag { get => (_f & 0x80) != 0; set => _f = (byte)(_f & 0x7F | (value ? 0x80 : 0)); }
     public bool SubtractionFlag { get => (_f & 0x40) != 0; set => _f = (byte)(_f & 0xBF | (value ? 0x40 : 0)); }
