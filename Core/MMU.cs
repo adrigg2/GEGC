@@ -24,6 +24,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
     private byte _svbk;
     private byte _key0;
     private byte _key1;
+    private byte _opri;
     private ICartridge _cartridge = new NoCartridge();
 
     public byte IE { get => _ie; set => _ie = value; }
@@ -40,6 +41,17 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
         }
     }
     public byte KEY1 { get => _key1; set => _key1 = (byte)(value & 0x81); }
+    public byte OPRI
+    {
+        get => _opri;
+        set
+        {
+            if (_bootRomMapped)
+            {
+                _opri = value;
+            }
+        }
+    }
     private byte SVBK { get => _svbk; set => _svbk = (byte)(value == 0 ? 1 : value & 0x07); }
 
     public ICartridge Cartridge { get => _cartridge; }
