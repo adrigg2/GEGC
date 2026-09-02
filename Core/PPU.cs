@@ -417,12 +417,10 @@ public class PPU
         bool doubleSize = (_lcdc & 0x4) != 0;
         for (int i = 0; i < ScreenWidth; i++)
         {
-            int objX = ScreenWidth;
-
             foreach (ushort address in _objectPool)
             {
                 int x = mmu.ReadByte((ushort)(address + 1)) - 8;
-                if (i >= x && i < x + 8 && x < objX)
+                if (i >= x && i < x + 8)
                 {
                     int y = mmu.ReadByte(address) - 16;
 
@@ -464,12 +462,13 @@ public class PPU
 
                     if (colorId != 0)
                     {
-                        objX = x;
                         byte OBP = palette > 0 ? _obp1 : _obp0;
                         int color = (OBP >> (colorId * 2)) & 0x3;
 
                         SetObjectPixel(i, _ly, color);
                     }
+
+                    break;
                 }
             }
         }
