@@ -23,6 +23,7 @@ public class PPU
     private const int ScreenHeigth = 144;
     private const int ScreenWidth = 160;
     private const int VRAMBankOffset = 0x2000;
+    private const int CRAMBankOffset = 0x40;
 
     private int _cycleCount;
     private int _windowY;
@@ -39,6 +40,8 @@ public class PPU
     private byte _wy;
     private byte _wx;
     private byte _vbk;
+    private byte _bgpi;
+    private byte _obpi;
 
     private bool _STATInterruptRequest;
     private bool _screenOff;
@@ -48,6 +51,7 @@ public class PPU
     private byte[] _bgColorIds;
     private readonly byte[] _vram;
     private readonly byte[] _oam;
+    private readonly byte[] _cram;
 
     private List<ushort> _objectPool;
 
@@ -75,19 +79,42 @@ public class PPU
             _vbk = (byte)(value & 0x01);
         }
     }
+    public byte BGPI { get => _bgpi; set => _bgpi = value; }
+    public byte BGPD
+    {
+        get => _cram[_bgpi & 0x3F];
+        set
+        {
+            _cram[_bgpi & 0x3F] = value;
+            if ((_bgpi & 0x80) != 0)
+            {
+                _bgpi++;
+                _bgpi = (byte)(_bgpi & 0xBF);
+            }
+        }
+    }
+    public byte OBPI { get => _obpi; set => _obpi = value; }
+    public byte OBPD
+    {
+        get => _cram[(_obpi & 0x3F) + 0x40];
+        set
+        {
+            _cram[(_obpi & 0x3F) + 0x40] = value;
+            if ((_obpi & 0x80) != 0)
+            {
+                _obpi++;
+                _obpi = (byte)(_obpi & 0xBF);
+            }
+        }
+    }
+
 
     public byte[] VRAM { get => _vram; }
     public byte[] OAM { get => _oam; }
 
     public PPU(Dispatcher windowDispatcher)
     {
-        Color color0 = Color.FromRgb(136, 240, 0);  // 155, 188, 15
-        Color color1 = Color.FromRgb(32, 152, 96);  // 139, 172, 15
-        Color color2 = Color.FromRgb(64, 128, 16);  // 48,  98,  48
-        Color color3 = Color.FromRgb(8, 72, 0);     // 15,  56,  15
-
-        BitmapPalette palette = new([color0, color1, color2, color3]);
-        _screenImage = new WriteableBitmap(ScreenWidth, ScreenHeigth, 96, 96, PixelFormats.Indexed2, palette);
+        _screenImage = new WriteableBitmap(ScreenWidth, ScreenHeigth, 96, 96, PixelFormats.Bgr555, null);
         int stride = (ScreenWidth + 3) / 4;
         int totalBytes = ScreenHeigth * stride;
         byte[] pixels = Enumerable.Repeat((byte)0xFF, totalBytes).ToArray();
@@ -99,16 +126,11 @@ public class PPU
 
         _oam = new byte[0xA0];
         _vram = new byte[0x4000];
+        _cram = new byte[0x80];
     }
 
     public void SetWindowSource(MainWindow window)
     {
-        window.Screen.Source = _screenImage;
-    }
-
-    public void SetBitmapPalette(MainWindow window, Color[] palette)
-    {
-        _screenImage = new(ScreenWidth, ScreenHeigth, 96, 96, PixelFormats.Indexed2, new BitmapPalette(palette));
         window.Screen.Source = _screenImage;
     }
 
