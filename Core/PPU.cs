@@ -1,6 +1,5 @@
 ﻿using GameBoyCEmulator.SaveState.Components;
 using GameBoyCEmulator.Views;
-using System.Printing;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -47,7 +46,7 @@ public class PPU
     private bool _screenOff;
 
     private WriteableBitmap _screenImage;
-    private byte[] _screenBuffer;
+    private ushort[] _screenBuffer;
     private byte[] _bgColorIds;
     private readonly byte[] _vram;
     private readonly byte[] _oam;
@@ -96,10 +95,10 @@ public class PPU
     public byte OBPI { get => _obpi; set => _obpi = value; }
     public byte OBPD
     {
-        get => _cram[(_obpi & 0x3F) + 0x40];
+        get => _cram[(_obpi & 0x3F) + CRAMBankOffset];
         set
         {
-            _cram[(_obpi & 0x3F) + 0x40] = value;
+            _cram[(_obpi & 0x3F) + CRAMBankOffset] = value;
             if ((_obpi & 0x80) != 0)
             {
                 _obpi++;
@@ -115,11 +114,10 @@ public class PPU
     public PPU(Dispatcher windowDispatcher)
     {
         _screenImage = new WriteableBitmap(ScreenWidth, ScreenHeigth, 96, 96, PixelFormats.Bgr555, null);
-        int stride = (ScreenWidth + 3) / 4;
-        int totalBytes = ScreenHeigth * stride;
-        byte[] pixels = Enumerable.Repeat((byte)0xFF, totalBytes).ToArray();
-        _screenImage.WritePixels(new Int32Rect(0, 0, ScreenWidth, ScreenHeigth), pixels, stride, 0);
-        _screenBuffer = new byte[ScreenWidth * ScreenHeigth / 4];
+        int totalBytes = ScreenHeigth * ScreenWidth;
+        ushort[] pixels = [.. Enumerable.Repeat((ushort)0x7FFF, totalBytes)];
+        _screenImage.WritePixels(new Int32Rect(0, 0, ScreenWidth, ScreenHeigth), pixels, ScreenWidth * 2, 0);
+        _screenBuffer = new ushort[ScreenWidth * ScreenHeigth];
         _bgColorIds = new byte[ScreenWidth];
         _windowDispatcher = windowDispatcher;
         _objectPool = [];
@@ -146,7 +144,7 @@ public class PPU
             if (!_screenOff)
             {
                 _screenOff = true;
-                Array.Fill<byte>(_screenBuffer, 0xFF);
+                Array.Fill<ushort>(_screenBuffer, 0x7FFF);
             }
 
             return;
@@ -196,11 +194,10 @@ public class PPU
                     {
                         ChangeMode(VBlank);
 
-                        byte[] bufferCopy = (byte[])_screenBuffer.Clone();
+                        ushort[] bufferCopy = (ushort[])_screenBuffer.Clone();
                         _windowDispatcher.BeginInvoke(() =>
                         {
-                            int stride = (ScreenWidth + 3) / 4;
-                            _screenImage.WritePixels(new Int32Rect(0, 0, ScreenWidth, ScreenHeigth), bufferCopy, stride, 0);
+                            _screenImage.WritePixels(new Int32Rect(0, 0, ScreenWidth, ScreenHeigth), bufferCopy, ScreenWidth * 2, 0);
                         });
                         Array.Clear(_screenBuffer);
                         _windowY = 0;
@@ -280,19 +277,19 @@ public class PPU
         _wx = state.WX;
         _STATInterruptRequest = state.STATInterruptRequest;
         _screenOff = state.ScreenOff;
-        _screenBuffer = (byte[])state.ScreenBuffer.Clone();
+        _screenBuffer = (ushort[])state.ScreenBuffer.Clone();
         _bgColorIds = (byte[])state.BgColorIds.Clone();
         _objectPool = [.. state.ObjectPool];
     }
 
     public void WriteVRAM(ushort address, byte value)
     {
-        _vram[VBK * VRAMBankOffset + address] = value;
+        _vram[(VBK & 0x01) * VRAMBankOffset + address] = value;
     }
 
     public byte ReadVRAM(ushort address)
     {
-        return _vram[VBK * VRAMBankOffset + address];
+        return _vram[(VBK & 0x01) * VRAMBankOffset + address];
     }
 
     public void WriteOAM(ushort address, byte value)
@@ -344,9 +341,11 @@ public class PPU
 
     private void RenderScanLine(MMU mmu)
     {
+        bool compatibilityMode = mmu.KEY0 != 0;
+
         if ((_lcdc & 0x1) != 0)
         {
-            RenderBG(mmu);
+            RenderBG(compatibilityMode);
         }
         else
         {
@@ -362,7 +361,7 @@ public class PPU
         }
     }
 
-    private void RenderBG(MMU mmu)
+    private void RenderBG(bool compatibilityMode)
     {
         byte WX = _wx >= 7 ? (byte)(_wx - 7) : (byte)0;
 
@@ -378,6 +377,7 @@ public class PPU
 
         byte tileDataLow = 0;
         byte tileDataHigh = 0;
+        byte tileAttributes = 0;
         bool isWindow = false;
         for (int i = 0; i < ScreenWidth; i++)
         {
@@ -390,11 +390,11 @@ public class PPU
             ushort tileMapAddress;
             if (isWindow)
             {
-                tileMapAddress = (_lcdc & 0x40) != 0 ? (ushort)0x9C00 : (ushort)0x9800;
+                tileMapAddress = (_lcdc & 0x40) != 0 ? (ushort)0x1C00 : (ushort)0x1800;
             }
             else
             {
-                tileMapAddress = (_lcdc & 0x08) != 0 ? (ushort)0x9C00 : (ushort)0x9800;
+                tileMapAddress = (_lcdc & 0x08) != 0 ? (ushort)0x1C00 : (ushort)0x1800;
             }
 
             byte x = isWindow ? (byte)(i - WX + wxOffset) : (byte)(i + _scx);
@@ -402,27 +402,63 @@ public class PPU
             {
                 ushort tileCol = (ushort)(x / 8);
                 ushort tileIndex = (ushort)(tileMapAddress + tileRow + tileCol);
+                tileAttributes = _vram[tileIndex + VRAMBankOffset];
 
-                ushort tileDataAddress = (_lcdc & 0x10) != 0 ? (ushort)0x8000 : (ushort)0x9000;
+                ushort tileDataAddress = (_lcdc & 0x10) != 0 ? (ushort)0x0000 : (ushort)0x1000;
                 ushort tileLoc;
                 if ((_lcdc & 0x10) != 0)
                 {
-                    tileLoc = (ushort)(tileDataAddress + (mmu.ReadByte(tileIndex) * 16));
+                    tileLoc = (ushort)(tileDataAddress + (_vram[tileIndex] * 16));
                 }
                 else
                 {
-                    tileLoc = (ushort)(tileDataAddress + ((sbyte)mmu.ReadByte(tileIndex)) * 16);
+                    tileLoc = (ushort)(tileDataAddress + ((sbyte)_vram[tileIndex]) * 16);
                 }
 
-                tileDataLow = mmu.ReadByte((ushort)(tileLoc + tileLine));
-                tileDataHigh = mmu.ReadByte((ushort)(tileLoc + tileLine + 1));
+                if (!compatibilityMode)
+                {
+                    if ((tileAttributes & 0x40) != 0)
+                    {
+                        tileLine = (byte)(7 - tileLine);
+                    }
+
+                    if ((tileAttributes & 0x08) != 0)
+                    {
+                        tileLoc += VRAMBankOffset;
+                    }
+                }
+
+                tileDataLow = _vram[(ushort)(tileLoc + tileLine)];
+                tileDataHigh = _vram[(ushort)(tileLoc + tileLine + 1)];
             }
 
-            int colorBit = 1 << (7 - (x & 7));
-            int colorIdLow = (tileDataLow & colorBit) != 0 ? 1 : 0;
-            int colorIdHigh = (tileDataHigh & colorBit) != 0 ? 2 : 0;
-            int colorId = colorIdLow + colorIdHigh;
-            int color = (_bgp >> (colorId * 2)) & 0x3;
+
+            int color;
+            int colorId;
+            if (compatibilityMode)
+            {
+                int colorBit = 1 << (7 - (x & 7));
+                int colorIdLow = (tileDataLow & colorBit) != 0 ? 1 : 0;
+                int colorIdHigh = (tileDataHigh & colorBit) != 0 ? 2 : 0;
+                colorId = colorIdLow + colorIdHigh;
+                color = (_bgp >> (colorId * 2)) & 0x3;
+                color = _cram[color * 2] | (_cram[color * 2 + 1] << 8);
+            }
+            else
+            {
+                if ((tileAttributes & 0x20) != 0)
+                {
+                    x = (byte)(7 - x);
+                }
+
+                int colorBit = 1 << (7 - (x & 7));
+                int colorIdLow = (tileDataLow & colorBit) != 0 ? 1 : 0;
+                int colorIdHigh = (tileDataHigh & colorBit) != 0 ? 2 : 0;
+                colorId = colorIdLow + colorIdHigh;
+                int palette = tileAttributes & 0x07;
+
+                color = _cram[colorId * 2 + palette * 8] | (_cram[colorId * 2 + palette * 8 + 1] << 8);
+            }
 
             SetPixel(i, _ly, color);
             _bgColorIds[i] = (byte)colorId;
@@ -504,7 +540,7 @@ public class PPU
 
     private void SetPixel(int x, int y, int color)
     {
-        _screenBuffer[(y * ScreenWidth + x) / 4] |= (byte)(color << ((~x & 3) * 2));
+        _screenBuffer[y * ScreenWidth + x] = (ushort)color;
     }
 
     private void SetObjectPixel(int x, int y, int color)

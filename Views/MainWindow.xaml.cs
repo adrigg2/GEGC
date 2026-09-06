@@ -61,47 +61,6 @@ public partial class MainWindow : Window
 
         MinWidth = GbWidth + 100;
         MinHeight = GbHeight + 100;
-
-        if (Enumerable.SequenceEqual(lcd1, Settings.Palette))
-        {
-            LCD1.IsChecked = true;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = false;
-        }
-        else if (Enumerable.SequenceEqual(lcd2, Settings.Palette))
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = true;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = false;
-        }
-        else if (Enumerable.SequenceEqual(lcd3, Settings.Palette))
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = true;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = false;
-        }
-        else if (Enumerable.SequenceEqual(baw, Settings.Palette))
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = true;
-            CustomPalette.IsChecked = false;
-        }
-        else
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = true;
-        }
     }
 
     private void Tick(CancellationToken token)
@@ -123,7 +82,7 @@ public partial class MainWindow : Window
 
             if (frames % framesPerSave == 0)
             {
-                _rewindStack.Push(_emulator.SaveState());
+                //_rewindStack.Push(_emulator.SaveState());
             }
 
             while (_rewinding && _rewindStack.Count > 0)
@@ -218,7 +177,7 @@ public partial class MainWindow : Window
             {
                 Owner = this
             };
-            window.RenderVRAM((byte[])_emulator.PPU.VRAM.Clone(), _emulator.PPU.LCDC, _emulator.PPU.SCX, _emulator.PPU.SCY, Settings.Palette);
+            window.RenderVRAM((byte[])_emulator.PPU.VRAM.Clone(), _emulator.PPU.LCDC, _emulator.PPU.SCX, _emulator.PPU.SCY, []);
             window.ShowDialog();
             _paused = false;
         }
@@ -252,60 +211,6 @@ public partial class MainWindow : Window
         Screen.Height = GbHeight * scale;
     }
 
-    private void ChangePalette(object sender, RoutedEventArgs e)
-    {
-        if (sender.Equals(LCD1))
-        {
-            LCD1.IsChecked = true;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = false;
-            _emulator?.PPU.SetBitmapPalette(this, lcd1);
-            Settings.Palette = lcd1;
-        }
-        else if (sender.Equals(LCD2))
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = true;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = false;
-            _emulator?.PPU.SetBitmapPalette(this, lcd2);
-            Settings.Palette = lcd2;
-        }
-        else if (sender.Equals(LCD3))
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = true;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = false;
-            _emulator?.PPU.SetBitmapPalette(this, lcd3);
-            Settings.Palette = lcd3;
-        }
-        else if (sender.Equals(BaW))
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = true;
-            CustomPalette.IsChecked = false;
-            _emulator?.PPU.SetBitmapPalette(this, baw);
-            Settings.Palette = baw;
-        }
-        else if (sender.Equals(CustomPalette))
-        {
-            LCD1.IsChecked = false;
-            LCD2.IsChecked = false;
-            LCD3.IsChecked = false;
-            BaW.IsChecked = false;
-            CustomPalette.IsChecked = true;
-            _emulator?.PPU.SetBitmapPalette(this, Settings.CustomPalette);
-            Settings.Palette = Settings.CustomPalette;
-        }
-    }
-
     private void OpenROM(object sender, RoutedEventArgs e)
     {
         if (!File.Exists(Settings.BootRomFilePath))
@@ -317,8 +222,7 @@ public partial class MainWindow : Window
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             FileName = "Game",
-            DefaultExt = ".gb",
-            Filter = "GameBoy ROM (.gb)|*.gb"
+            DefaultExt = ".gbc",
         };
 
         bool? result = dialog.ShowDialog();
@@ -327,7 +231,7 @@ public partial class MainWindow : Window
         {
             string romFilePath = dialog.FileName;
             string fileExtension = Path.GetExtension(romFilePath);
-            if (fileExtension.ToLower().Equals(".gb"))
+            if (fileExtension.ToLower().Equals(".gb") || fileExtension.ToLower().Equals(".gbc"))
             {
                 _cts?.Cancel();
 
@@ -340,7 +244,6 @@ public partial class MainWindow : Window
 
                 _emulator = new Emulator(romFilePath, Settings.BootRomFilePath, Dispatcher);
                 _emulator?.PPU.SetWindowSource(this);
-                _emulator?.PPU.SetBitmapPalette(this, Settings.Palette);
 
                 _romName = Path.GetFileNameWithoutExtension(romFilePath);
                 Title = _romName;
@@ -364,10 +267,6 @@ public partial class MainWindow : Window
 
         window.ShowDialog();
         Settings.SaveSettings();
-        if (CustomPalette.IsChecked)
-        {
-            _emulator?.PPU.SetBitmapPalette(this, Settings.CustomPalette);
-        }
 
         _paused = false;
     }

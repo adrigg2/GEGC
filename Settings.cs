@@ -10,8 +10,6 @@ public static class Settings
     private readonly static SettingsData _data = new();
 
     public static float Volume { get => _data.Volume; set => _data.Volume = value; }
-    public static Color[] Palette { get => _data.Palette; set { _data.Palette = value; SaveSettings(); } }
-    public static Color[] CustomPalette { get => _data.CustomPalette; set => _data.CustomPalette = value; }
     public static Key DPadUp { get => _data.DPadUp; set => _data.DPadUp = value; }
     public static Key DPadLeft { get => _data.DPadLeft; set => _data.DPadLeft = value; }
     public static Key DPadRight { get => _data.DPadRight; set => _data.DPadRight = value; }
@@ -53,8 +51,6 @@ public static class Settings
     private class SettingsData
     {
         public float Volume { get; set; } = 1.0f;
-        public Color[] Palette { get; set; } = [Color.FromRgb(198, 222, 140), Color.FromRgb(132, 165, 99), Color.FromRgb(57, 97, 57), Color.FromRgb(8, 24, 16)];
-        public Color[] CustomPalette { get; set; } = [Color.FromRgb(0, 0, 0), Color.FromRgb(0, 0, 0), Color.FromRgb(0, 0, 0), Color.FromRgb(0, 0, 0)];
         public Key DPadUp { get; set; } = Key.W;
         public Key DPadLeft { get; set; } = Key.A;
         public Key DPadRight { get; set; } = Key.D;

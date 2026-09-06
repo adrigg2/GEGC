@@ -168,6 +168,14 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 return KEY1;
             case 0xFF4F:
                 return _ppu.VBK;
+            case 0xFF68:
+                return _ppu.BGPI;
+            case 0xFF69:
+                return _ppu.BGPD;
+            case 0xFF6A:
+                return _ppu.OBPI;
+            case 0xFF6B:
+                return _ppu.OBPD;
             case 0xFF70:
                 return SVBK;
             case 0xFF76:
@@ -348,6 +356,18 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 break;
             case 0xFF50:
                 _bootRomMapped = false;
+                break;
+            case 0xFF68:
+                _ppu.BGPI = value;
+                break;
+            case 0xFF69:
+                _ppu.BGPD = value;
+                break;
+            case 0xFF6A:
+                _ppu.OBPI = value;
+                break;
+            case 0xFF6B:
+                _ppu.OBPD = value;
                 break;
             case 0xFF70:
                 SVBK = value;

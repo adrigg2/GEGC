@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace GameBoyCEmulator.Views.SettingsWindow;
 
@@ -18,11 +17,6 @@ public partial class SettingsWindow : Window
 
         VolumeControl.Value = Settings.Volume;
         VolumeText.Content = $"{(int)(Settings.Volume * 100)}%";
-
-        Color0.SelectedColor = Settings.CustomPalette[0];
-        Color1.SelectedColor = Settings.CustomPalette[1];
-        Color2.SelectedColor = Settings.CustomPalette[2];
-        Color3.SelectedColor = Settings.CustomPalette[3];
 
         DPadUp.Content = Settings.DPadUp;
         DPadLeft.Content = Settings.DPadLeft;
@@ -48,10 +42,6 @@ public partial class SettingsWindow : Window
         Closed += (_, _) =>
         {
             Settings.Volume = (float)VolumeControl.Value;
-            Settings.CustomPalette[0] = Color0.SelectedColor ?? Color.FromRgb(255, 255, 255);
-            Settings.CustomPalette[1] = Color1.SelectedColor ?? Color.FromRgb(255, 255, 255);
-            Settings.CustomPalette[2] = Color2.SelectedColor ?? Color.FromRgb(255, 255, 255);
-            Settings.CustomPalette[3] = Color3.SelectedColor ?? Color.FromRgb(255, 255, 255);
         };
     }
 
