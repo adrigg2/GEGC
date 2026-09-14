@@ -582,6 +582,6 @@ public class PPU
     {
         int index = (y * ScreenWidth + x);
 
-        _screenBuffer[index] &= (ushort)color;
+        _screenBuffer[index] = (ushort)color;
     }
 }
