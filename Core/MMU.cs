@@ -4,7 +4,7 @@ using GameBoyCEmulator.SaveState.Components;
 
 namespace GameBoyCEmulator.Core;
 
-public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
+public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu, VRAMDMA vramDMA)
 {
     private const int WRAMBankOffset = 0x1000;
 
@@ -13,6 +13,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
     private readonly PPU _ppu = ppu;
     private readonly TIMER _timer = timer;
     private readonly APU _apu = apu;
+    private readonly VRAMDMA _vramDMA = vramDMA;
 
     public bool _bootRomMapped = true; // DEBUG: Public
 
@@ -55,6 +56,7 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
     private byte SVBK { get => _svbk; set => _svbk = (byte)(value == 0 ? 1 : value & 0x07); }
 
     public ICartridge Cartridge { get => _cartridge; }
+    public VRAMDMA VRAMDMA { get => _vramDMA; }
 
     public byte ReadByte(ushort address)
     {
@@ -168,6 +170,8 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 return KEY1;
             case 0xFF4F:
                 return _ppu.VBK;
+            case 0xFF55:
+                return _vramDMA.HDMA5;
             case 0xFF68:
                 return _ppu.BGPI;
             case 0xFF69:
@@ -356,6 +360,21 @@ public class MMU(DMA dma, JOYPAD joypad, PPU ppu, TIMER timer, APU apu)
                 break;
             case 0xFF50:
                 _bootRomMapped = false;
+                break;
+            case 0xFF51:
+                _vramDMA.HDMA1 = value;
+                break;
+            case 0xFF52:
+                _vramDMA.HDMA2 = value;
+                break;
+            case 0xFF53:
+                _vramDMA.HDMA3 = value;
+                break;
+            case 0xFF54:
+                _vramDMA.HDMA4 = value;
+                break;
+            case 0xFF55:
+                _vramDMA.HDMA5 = value;
                 break;
             case 0xFF68:
                 _ppu.BGPI = value;

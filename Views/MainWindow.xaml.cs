@@ -1,5 +1,6 @@
 ﻿using GameBoyCEmulator.SaveState;
 using GameBoyCEmulator.Views.VRAMInspector;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -76,6 +77,8 @@ public partial class MainWindow : Window
             return;
         }
 
+        var stop = new Stopwatch();
+        stop.Start();
         while (!token.IsCancellationRequested)
         {
             _emulator.ProcessFrame();
@@ -107,6 +110,14 @@ public partial class MainWindow : Window
             {
                 _emulator.LoadState(_loadState);
                 _loadState = null;
+            }
+
+            if (stop.ElapsedMilliseconds >= 60 * 1000)
+            {
+                double fps = frames / (stop.ElapsedMilliseconds / 1000.0);
+                Console.WriteLine($"FPS this minute = {fps}");
+                stop.Restart();
+                frames = 0;
             }
         }
 

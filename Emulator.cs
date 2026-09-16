@@ -14,6 +14,7 @@ public class Emulator
     private readonly JOYPAD _joypad;
     private readonly TIMER _timer;
     private readonly APU _apu;
+    private readonly VRAMDMA _vramDMA;
 
     private const int CPUFrequency = 4194304; // 4.194304 MHz
     private const int CyclesPerFrame = 70224; // ~60 FPS
@@ -36,7 +37,8 @@ public class Emulator
         _timer = new();
         _dma = new();
         _apu = new();
-        _mmu = new(_dma, _joypad, _ppu, _timer, _apu);
+        _vramDMA = new();
+        _mmu = new(_dma, _joypad, _ppu, _timer, _apu, _vramDMA);
         _mmu.LoadGame(romBytes, romName);
         _mmu.LoadBootRom(bootRomBytes);
         _cpu = new(_mmu);

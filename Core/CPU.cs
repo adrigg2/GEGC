@@ -111,7 +111,7 @@ public class CPU
                 A = (byte)((A >> 1) | (A << 7));
                 break;
             case 0x10:                                                              // STOP
-                if ((_mmu.KEY0 & 0x04) == 0)
+                if ((_mmu.KEY0 & 0x04) != 0)
                 {
                     return 4;
                 }

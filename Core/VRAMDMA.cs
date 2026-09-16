@@ -15,7 +15,6 @@ public class VRAMDMA
 
     public byte HDMA1
     {
-        get => (byte)(_sourceAddress >> 8);
         set
         {
             _sourceAddress = (ushort)(_sourceAddress & 0x00FF);
@@ -24,7 +23,6 @@ public class VRAMDMA
     }
     public byte HDMA2
     {
-        get => (byte)(_sourceAddress & 0x00FF);
         set
         {
             _sourceAddress = (ushort)(_sourceAddress & 0xFF00);
@@ -33,7 +31,6 @@ public class VRAMDMA
     }
     public byte HDMA3
     {
-        get => (byte)(_destinationAddress >> 8);
         set
         {
             _destinationAddress = (ushort)(_destinationAddress & 0x00FF);
@@ -42,7 +39,6 @@ public class VRAMDMA
     }
     public byte HDMA4
     {
-        get => (byte)(_destinationAddress & 0x00FF);
         set
         {
             _destinationAddress = (ushort)(_destinationAddress & 0xFF00);
