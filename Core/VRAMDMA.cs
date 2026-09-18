@@ -12,6 +12,8 @@ public class VRAMDMA
 
     private bool _active;
     private bool _hBlankDMA;
+    private bool _inHBlank;
+    private bool _halted;
 
     public byte HDMA1
     {
@@ -53,45 +55,47 @@ public class VRAMDMA
         {
             if (!_active)
             {
-                _hdma5 = value;
+                _hdma5 = (byte)(value & 0x7F);
                 _active = true;
-                _hBlankDMA = (_hdma5 & 0x80) != 0;
-                _dmaLength = ((_hdma5 & 0x7F) + 1) * 0x10;
+                _inHBlank = false;
+                _transfers = 0;
+                _hBlankDMA = (value & 0x80) != 0;
+                _dmaLength = ((value & 0x7F) + 1) * 0x10;
+            }
+            else if ((value & 0x80) == 0)
+            {
+                _active = false;
+                _hdma5 = (byte)(_hdma5 | 0x80);
             }
         }
     }
 
+    public bool Active { get => _active; }
+    public bool HBlankDMA { get => _hBlankDMA; }
+    public bool InHBlank { get => _inHBlank; set => _inHBlank = value; }
+    public bool Halted { get => _halted; set => _halted = value; }
+
     public int Tick(MMU mmu)
     {
-        if (!_active)
+        if (!_active || _halted)
         {
             return 0;
         }
 
-        if (_hBlankDMA)
-        {
-            for (int i = _transfers; i < _transfers + 0x10; i++)
-            {
-                byte b = mmu.ReadByte((ushort)(_sourceAddress + i));
-                mmu.WriteByte((ushort)(_destinationAddress + i), b);
-            }
-
-            _transfers += 0x10;
-            if (_transfers >= _dmaLength)
-            {
-                _active = false;
-            }
-
-            return CyclesPerTransfer * 0x10;
-        }
-
-        _active = false;
-        for (int i = 0; i < _dmaLength; i++)
+        for (int i = _transfers; i < _transfers + 0x10; i++)
         {
             byte b = mmu.ReadByte((ushort)(_sourceAddress + i));
             mmu.WriteByte((ushort)(_destinationAddress + i), b);
         }
 
-        return CyclesPerTransfer * _dmaLength;
+        _transfers += 0x10;
+        _hdma5--;
+        if (_transfers >= _dmaLength)
+        {
+            _active = false;
+        }
+
+        _inHBlank = false;
+        return CyclesPerTransfer * 0x10;
     }
 }

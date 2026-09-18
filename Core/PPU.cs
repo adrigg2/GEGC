@@ -182,6 +182,7 @@ public class PPU
                 {
                     _cycleCount -= VRAMReadCycles;
                     ChangeMode(HBlank);
+                    mmu.VRAMDMA.InHBlank = true;
 
                     RenderScanLine(mmu);
                 }

@@ -51,7 +51,16 @@ public class Emulator
         while (frameCycles < CyclesPerFrame)
         {
             //_calls++;
-            int cycles = _cpu.Execute();
+            int cycles;
+            if (_vramDMA.Active && (!_vramDMA.HBlankDMA || _vramDMA.InHBlank))
+            {
+                cycles = _vramDMA.Tick(_mmu);
+            }
+            else
+            {
+                cycles = _cpu.Execute();
+            }
+
             _ppu.Update(cycles, _mmu);
             _dma.Tick(cycles * _cpu.SpeedMode, _mmu);
             _joypad.Update(_mmu);

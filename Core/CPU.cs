@@ -274,12 +274,14 @@ public class CPU
                 if (_ime)
                 {
                     _halted = true;
+                    _mmu.VRAMDMA.Halted = true;
                 }
                 else
                 {
                     if ((_mmu.IE & _mmu.IF & 0x1F) == 0)
                     {
                         _halted = true;
+                        _mmu.VRAMDMA.Halted = true;
                     }
                     else
                     {
@@ -458,6 +460,7 @@ public class CPU
         if (_halted)
         {
             _halted = false;
+            _mmu.VRAMDMA.Halted = false;
         }
 
         if (!_ime)
